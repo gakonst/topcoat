@@ -18,4 +18,4 @@ npx wrangler dev
 
 Deploy it to your Cloudflare account with `npx wrangler deploy`.
 
-The app leaves out Topcoat's `serve` feature, which needs a native server. Request bodies are read into memory before routing. Runtime WebSocket connections are not available on Workers.
+The app leaves out Topcoat's `serve` feature, which needs a native server. Request bodies are read into memory before routing. Runtime WebSocket connections are available through `topcoat::runtime::transport::serve_connection`. Accept a WebSocket via `WebSocketPair`, wrap it in Frame-based adapters, and call `serve_connection`.

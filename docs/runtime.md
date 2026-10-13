@@ -303,3 +303,32 @@ Use `.get_untracked()` or `.read_untracked()` to read a value on the server with
 [`view!`]: ../view/macro.view.html
 [procedure]: attr.procedure.html
 [shard]: attr.shard.html
+
+# Transport-independent WebSocket connections
+
+The [`transport`](transport/index.html) module provides a platform-independent
+interface for serving runtime WebSocket connections.  On native servers the
+[`RuntimeLayer`] handles this automatically via hyper's WebSocket upgrade.
+On platforms that cannot use hyper (Cloudflare Workers, `wasm32-unknown-unknown`),
+accept the WebSocket through the platform's API and pass the resulting streams
+to [`transport::serve_connection`]:
+
+```rust,ignore
+use topcoat::runtime::transport::{self, Frame};
+
+// In a Cloudflare Worker fetch handler:
+if transport::is_runtime_upgrade(&parts) {
+    let pair = worker::WebSocketPair::new().unwrap();
+    let server = pair.server;
+    server.accept().unwrap();
+    // Wrap server in Frame-based Stream + Sink adapters, then:
+    wasm_bindgen_futures::spawn_local(async move {
+        transport::serve_connection(router.clone(), parts, incoming, outgoing).await;
+    });
+    // Return the client side in a 101 response.
+}
+```
+
+The transport module uses `tokio::spawn` on native and
+`wasm_bindgen_futures::spawn_local` on wasm for concurrent render execution.
+Stop messages and disconnects abort in-flight renders on both platforms.

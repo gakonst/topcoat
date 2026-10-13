@@ -1,45 +1,31 @@
 mod rerun;
 #[cfg(not(target_family = "wasm"))]
 mod socket;
+pub mod transport;
 
 pub use rerun::*;
 use topcoat_core::context::Cx;
 use topcoat_router::{Body, Layer, LayerFuture, Next, Path};
-
-/// The WebSocket subprotocol for runtime connections.
-///
-/// Request this subprotocol at a page's URL to open a connection through
-/// [`RuntimeLayer`]. The browser can then request renders and receive the
-/// content as frames. WebSocket connections require a native server.
-pub const RUNTIME_PROTOCOL: &str = "topcoat-runtime";
+pub use transport::{Frame, PROTOCOL as RUNTIME_PROTOCOL};
 
 /// A [`Layer`] that handles runtime requests at each page's URL.
 ///
 /// The browser can request a render in two ways:
 ///
-/// - Send a `POST` with `X-Topcoat-Runtime: true` and the document's signal values as JSON. The
-///   layer rewrites this to a `GET` at the same path and query. The page, layouts, and guards run
-///   with the supplied signal values. The rewritten request has an empty body and no
-///   [`RUNTIME_HEADER`], `Content-Type`, or `Content-Length` headers. To read the original method,
-///   use [`original_method`](topcoat_router::request::original_method).
-/// - Open a WebSocket with the [`RUNTIME_PROTOCOL`] subprotocol. Each render request on this
-///   connection describes an HTTP request: a method, a path, a body, and a few runtime headers,
-///   such as [`RUNTIME_HEADER`] for a page rerun. The layer dispatches it with the handshake's
-///   other headers as a connected render. Renders run side by side, and each message sent back
-///   names the render it belongs to. A connection may have at most
-///   [`max_runs_per_connection`](crate::RouterBuilderRuntimeExt::max_runs_per_connection) renders
-///   at once.
+/// - Send a POST with X-Topcoat-Runtime: true and the document's signal values as JSON.  The layer
+///   rewrites this to a GET at the same path and query.
+/// - Open a WebSocket with the [`RUNTIME_PROTOCOL`] subprotocol.  Each render request on this
+///   connection describes an HTTP request.  The layer dispatches it with the handshake's other
+///   headers as a connected render.
 ///
-/// WebSocket connections are supported on native servers. HTTP page reruns
-/// are also available on WebAssembly.
-///
-/// Other requests pass through unchanged, including form submissions and
-/// WebSocket requests that do not use the runtime subprotocol.
+/// WebSocket connections are supported on all platforms through the
+/// [`transport`] module.  On native servers the layer accepts the
+/// upgrade automatically; on other platforms (Cloudflare Workers, wasm)
+/// use [`transport::serve_connection`] directly after accepting the
+/// WebSocket.
 ///
 /// Register this layer with
 /// [`RouterBuilderRuntimeExt::runtime`](crate::RouterBuilderRuntimeExt::runtime).
-/// Call it after adding your application's pathless layers so they receive
-/// the rewritten `GET`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct RuntimeLayer;
 

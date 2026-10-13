@@ -619,6 +619,8 @@ dependencies = [
 name = "cloudflare-worker"
 version = "0.10.0"
 dependencies = [
+ "futures-core",
+ "futures-sink",
  "http-body-util",
  "serde",
  "topcoat",
@@ -1209,6 +1211,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07bbe89c50d7a535e539b8c17bc0b49bdb77747034daa8087407d655f3f7cc1d"
 dependencies = [
  "futures-core",
+ "futures-sink",
 ]
 
 [[package]]
@@ -3996,7 +3999,11 @@ dependencies = [
 name = "topcoat-runtime"
 version = "0.10.0"
 dependencies = [
+ "futures-channel",
+ "futures-core",
+ "futures-sink",
  "futures-util",
+ "http",
  "pin-project-lite",
  "ref-cast",
  "serde",
@@ -4008,6 +4015,7 @@ dependencies = [
  "topcoat-router",
  "topcoat-view",
  "topcoat-view-macro",
+ "wasm-bindgen-futures",
 ]
 
 [[package]]
